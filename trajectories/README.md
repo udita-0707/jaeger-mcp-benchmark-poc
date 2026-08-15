@@ -1,0 +1,5 @@
+# Trajectories
+
+These files are the process object for one evaluation run: the ordered list of MCP tool calls the model made, plus the final answer. `harness/run_eval.py` writes them after talking to the session-free Jaeger MCP server at `/api/ai/mcp/` (not the ACP sidecar). A placeholder file has `"_placeholder": true` until you run the harness locally — do not invent a trajectory.
+
+A trajectory object has `scenario`, `llm`, `tool_variant`, `skill_variant`, `run_timestamp`, `final_answer`, and `trajectory`. Each step is `{step, tool_name, input, response_length_tokens, response_summary, timestamp_ms}` (plus `response_excerpt` / `is_error` for scoring). `step` is 1-based. `response_summary` is the first 200 characters of the tool result; `steps-to-evidence` searches `response_excerpt` for the span-level marker (`oteldemo.CartService/EmptyCart`), not a service name. A high-level-variant step named `analyze_trace_fault` is one agent-visible call that the harness composed from `get_trace_errors` + `get_trace_topology` + `get_critical_path` on the real server.

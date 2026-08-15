@@ -1,0 +1,58 @@
+{
+  "name": "get_span_details",
+  "description": "Fetch full span data (attributes, events, links, status) for specific spans. Returns verbose output per span. Registered by cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/server.go; schema from mcptools/internal/types/get_span_details.go.",
+  "inputSchema": {
+    "type": "object",
+    "required": ["trace_id", "span_ids"],
+    "properties": {
+      "trace_id": {
+        "type": "string",
+        "description": "Unique identifier for the trace"
+      },
+      "span_ids": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "List of span IDs to fetch details for. Recommended to limit to 20 spans or fewer (MaxSpanDetailsPerRequest default)."
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "trace_id": {
+        "type": "string",
+        "description": "Unique identifier for the trace"
+      },
+      "spans": {
+        "type": "array",
+        "description": "List of span details",
+        "items": {
+          "type": "object",
+          "properties": {
+            "span_id": { "type": "string" },
+            "trace_id": { "type": "string" },
+            "parent_span_id": { "type": "string" },
+            "service": { "type": "string" },
+            "span_name": { "type": "string" },
+            "start_time": { "type": "string" },
+            "duration_us": { "type": "integer" },
+            "status": {
+              "type": "object",
+              "properties": {
+                "code": { "type": "string", "description": "Unset | Ok | Error" },
+                "message": { "type": "string" }
+              }
+            },
+            "attributes": { "type": "object" },
+            "events": { "type": "array" },
+            "links": { "type": "array" }
+          }
+        }
+      },
+      "error": {
+        "type": "string",
+        "description": "Error message if some spans were not found"
+      }
+    }
+  }
+}

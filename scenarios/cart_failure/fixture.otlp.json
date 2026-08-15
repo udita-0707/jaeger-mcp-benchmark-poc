@@ -1,0 +1,5 @@
+{
+  "_placeholder": true,
+  "_instructions": "Run the harness/run_eval.py script with CAPTURE_FIXTURE=true to populate this file. Requires OTel Demo running locally with cartFailure enabled.",
+  "_expected_structure": "OTLP JSON trace with resourceSpans, scopeSpans, spans array"
+}

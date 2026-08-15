@@ -1,0 +1,68 @@
+{
+  "name": "analyze_trace_fault",
+  "description": "High-level A/B variant: given a trace_id, walk errors, topology, and the critical path internally and return a pre-summarized fault analysis. Not registered in server.go — the harness composes get_trace_errors + get_trace_topology + get_critical_path so this schema can be A/B'd without forking Jaeger. Skills compose reviewed tools (#8440); promoting this into registerTools is a possible outcome of the experiment, not a prerequisite.",
+  "inputSchema": {
+    "type": "object",
+    "required": ["trace_id"],
+    "properties": {
+      "trace_id": {
+        "type": "string",
+        "description": "Unique identifier for the trace"
+      }
+    }
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "trace_id": { "type": "string" },
+      "originating_error": {
+        "type": "object",
+        "description": "Deepest error span with no errored children, drawn from get_trace_errors + get_trace_topology",
+        "properties": {
+          "span_id": { "type": "string" },
+          "service": { "type": "string" },
+          "span_name": { "type": "string" },
+          "status_code": { "type": "string" },
+          "status_message": { "type": "string" },
+          "path": {
+            "type": "string",
+            "description": "Slash-delimited span IDs from root to this span (get_trace_topology.path)"
+          }
+        }
+      },
+      "propagation_chain": {
+        "type": "array",
+        "description": "Ancestor spans from originating_error to the root, topology order",
+        "items": {
+          "type": "object",
+          "properties": {
+            "service": { "type": "string" },
+            "span_name": { "type": "string" },
+            "status": { "type": "string" }
+          }
+        }
+      },
+      "critical_path_hotspots": {
+        "type": "array",
+        "description": "get_critical_path segments with the highest self_time_us",
+        "items": {
+          "type": "object",
+          "properties": {
+            "span_id": { "type": "string" },
+            "service": { "type": "string" },
+            "span_name": { "type": "string" },
+            "self_time_us": { "type": "integer" }
+          }
+        }
+      },
+      "total_error_count": {
+        "type": "integer",
+        "description": "Uncapped error count from get_trace_errors; compare with how much of originating_error was actually retrieved"
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True if any underlying tool hit MaxSpanDetailsPerRequest"
+      }
+    }
+  }
+}

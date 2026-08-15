@@ -1,0 +1,92 @@
+# Jaeger (MCP-enabled) + OpenTelemetry Demo fault injection for #9135.
+#
+# Jaeger UI / session-free MCP:  http://localhost:16686
+#                               http://localhost:16686/api/ai/mcp/
+# Flagd UI (trigger a fault):    http://localhost:4000
+# Flagd / OFREP:                 localhost:8013 / localhost:8016
+# Astronomy Shop (if demo up):   http://localhost:8080
+#
+# Image pins match OpenTelemetry Demo 3.0.0 (.env IMAGE_VERSION=3.0.0,
+# FLAGD_IMAGE=ghcr.io/open-feature/flagd:v0.16.0). Jaeger is the v2 all-in-one
+# image (jaegertracing/jaeger), not jaegertracing/all-in-one — the v1 image
+# does not serve /api/ai/mcp/.
+#
+# The full Astronomy Shop is 20+ services. This file runs Jaeger + flagd + the
+# cart path needed for cartFailure. Bring up the rest of the demo with:
+#   git clone --depth 1 --branch 3.0.0 https://github.com/open-telemetry/opentelemetry-demo.git /tmp/otel-demo
+#   docker compose -f /tmp/otel-demo/docker-compose.yml up -d
+# and point the demo collector at this Jaeger (host.docker.internal:4317) if
+# you want checkout/frontend in the causal chain. cartFailure still produces
+# an error span on oteldemo.CartService/EmptyCart from the cart service below.
+
+services:
+  # Query UI :16686, OTLP :4317/:4318, MCP at /api/ai/mcp/
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    container_name: jaeger-mcp-benchmark
+    command: ["--config", "/etc/jaeger/config.yaml"]
+    volumes:
+      - ./jaeger-config.yaml:/etc/jaeger/config.yaml:ro
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
+  # Feature-flag service. Edit flagd/demo.flagd.json or use flagd-ui; flagd
+  # watches the file. Set cartFailure to 100% to seed the first scenario.
+  flagd:
+    image: ghcr.io/open-feature/flagd:v0.16.0
+    container_name: jaeger-mcp-flagd
+    command: ["start", "--uri", "file:./etc/flagd/demo.flagd.json"]
+    volumes:
+      - ./flagd:/etc/flagd
+    ports:
+      - "8013:8013"
+      - "8016:8016"
+    restart: unless-stopped
+
+  # http://localhost:4000 — change cartFailure here (port to hit to trigger a fault).
+  flagd-ui:
+    image: ghcr.io/open-telemetry/demo:3.0.0-flagd-ui
+    container_name: jaeger-mcp-flagd-ui
+    environment:
+      - OTEL_SERVICE_NAME=flagd-ui
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./flagd:/app/data
+    depends_on:
+      - flagd
+    restart: unless-stopped
+
+  valkey-cart:
+    image: ghcr.io/valkey-io/valkey:9.0.4-alpine3.23
+    container_name: jaeger-mcp-valkey
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # OTel Demo cart service (IMAGE_VERSION 3.0.0). EmptyCart reads cartFailure
+  # and, on a hit, dials badhost:1234 — producing oteldemo.CartService/EmptyCart
+  # with status Error. Traces export OTLP to the Jaeger above, not the demo's
+  # bundled Jaeger.
+  cart:
+    image: ghcr.io/open-telemetry/demo:3.0.0-cart
+    container_name: jaeger-mcp-cart
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - VALKEY_ADDR=valkey-cart:6379
+      - FLAGD_HOST=flagd
+      - FLAGD_PORT=8013
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_SERVICE_NAME=cart
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=opentelemetry-demo,service.name=cart,service.version=3.0.0
+    ports:
+      - "7070:8080"
+    depends_on:
+      - valkey-cart
+      - flagd
+      - jaeger
+    restart: unless-stopped

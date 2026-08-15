@@ -1,0 +1,5 @@
+{
+  "_placeholder": true,
+  "_instructions": "Do not populate until productCatalogFailure is un-broken (flagd targeting workaround in scenario.md, opentelemetry-demo#3816). Then: CAPTURE_FIXTURE=true python harness/run_eval.py --scenario product_catalog_failure",
+  "_expected_structure": "OTLP JSON trace with resourceSpans, scopeSpans, spans array"
+}

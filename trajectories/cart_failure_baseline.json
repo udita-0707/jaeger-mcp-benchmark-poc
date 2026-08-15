@@ -1,0 +1,13 @@
+{
+  "_placeholder": true,
+  "_instructions": "Run: python harness/run_eval.py --scenario cart_failure to populate this file.",
+  "_schema": {
+    "scenario": "string",
+    "llm": "string",
+    "tool_variant": "string",
+    "skill_variant": "string",
+    "trajectory": "array of step objects",
+    "final_answer": "string",
+    "run_timestamp": "ISO8601"
+  }
+}

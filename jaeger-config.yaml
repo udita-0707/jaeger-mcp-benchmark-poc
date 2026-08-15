@@ -1,0 +1,59 @@
+# Copyright (c) 2026 The Jaeger Authors.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Jaeger v2 all-in-one for the MCP benchmark POC.
+# MCP is served at /api/ai/mcp/ on the query port when ai.mcp is present.
+# Listen on 0.0.0.0 so the endpoint is reachable from other compose services
+# and from the host. Memory storage is enough for a seeded fault capture.
+
+service:
+  extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [jaeger_storage_exporter]
+  telemetry:
+    resource:
+      service.name: jaeger
+    logs:
+      level: info
+
+extensions:
+  jaeger_query:
+    storage:
+      traces: some_storage
+    http:
+      endpoint: 0.0.0.0:16686
+    grpc:
+      endpoint: 0.0.0.0:16685
+    ai:
+      # Session-free telemetry MCP tools. This is the endpoint the harness
+      # dials — not the ACP sidecar /api/ai/mcp/<id>/.
+      mcp: {}
+
+  jaeger_storage:
+    backends:
+      some_storage:
+        memory:
+          max_traces: 100000
+
+  healthcheckv2:
+    use_v2: true
+    http:
+      endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: some_storage

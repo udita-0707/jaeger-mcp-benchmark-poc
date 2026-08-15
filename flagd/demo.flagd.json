@@ -1,0 +1,40 @@
+{
+  "$schema": "https://flagd.dev/schema/v0/flags.json",
+  "flags": {
+    "cartFailure": {
+      "defaultVariant": "off",
+      "description": "Fail cart service n% of the time. Set to 100% to seed the cart_failure scenario.",
+      "state": "ENABLED",
+      "variants": {
+        "10%": 0.1,
+        "100%": 1,
+        "25%": 0.25,
+        "50%": 0.5,
+        "75%": 0.75,
+        "90%": 0.9,
+        "off": 0
+      }
+    },
+    "productCatalogFailure": {
+      "defaultVariant": "off",
+      "description": "INTENTIONALLY BROKEN — both targeting branches are off, matching upstream demo.flagd.json (opentelemetry-demo#3816). Do not score. Workaround: change the match branch from off to on.",
+      "state": "ENABLED",
+      "targeting": {
+        "if": [
+          {
+            "==": [
+              { "var": "product_id" },
+              "OLJCESPC7Z"
+            ]
+          },
+          "off",
+          "off"
+        ]
+      },
+      "variants": {
+        "off": false,
+        "on": true
+      }
+    }
+  }
+}
