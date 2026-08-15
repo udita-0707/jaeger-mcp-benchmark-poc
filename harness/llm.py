@@ -4,17 +4,19 @@ Every model call in this harness goes through ``call_llm(prompt, tools)``.
 Swap the body of ``call_llm`` (or set ``LLM_MODEL``) without touching
 ``run_eval.py`` scoring or the MCP loop.
 
-Default: gemini-1.5-flash via Google AI Studio (``GEMINI_API_KEY``), temperature 0.
+Default: gemini-3.5-flash via Google AI Studio (``GEMINI_API_KEY``), temperature 0.
+``gemini-1.5-flash`` and ``gemini-2.5-flash`` 404 for new AI Studio keys; override with ``LLM_MODEL``.
 """
 
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
 
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gemini-1.5-flash")
+DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gemini-3.5-flash")
 DEFAULT_TEMPERATURE = 0.0
 
 
@@ -34,6 +36,32 @@ class LLMError(RuntimeError):
     """Raised when the provider cannot be reached or is misconfigured."""
 
 
+def _sanitize_schema(schema: Any) -> Any:
+    """Narrow JSON Schema to the subset google.generativeai accepts.
+
+    Jaeger MCP advertises nullable unions such as ``span_ids: ["null",
+    "array"]``. The old Gemini SDK does ``type.upper()`` and crashes on a list.
+    """
+    if not isinstance(schema, dict):
+        return schema
+    out: dict[str, Any] = {}
+    for key, value in schema.items():
+        if key not in {"type", "properties", "required", "description", "items", "enum"}:
+            continue
+        if key == "type" and isinstance(value, list):
+            non_null = [item for item in value if item != "null"]
+            out["type"] = non_null[0] if non_null else "string"
+        elif key == "properties" and isinstance(value, dict):
+            out["properties"] = {name: _sanitize_schema(prop) for name, prop in value.items()}
+        elif key == "items":
+            out["items"] = _sanitize_schema(value)
+        else:
+            out[key] = value
+    if "type" not in out and "properties" in out:
+        out["type"] = "object"
+    return out
+
+
 def _gemini_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
     declarations = []
     for tool in tools:
@@ -41,14 +69,8 @@ def _gemini_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "type": "object",
             "properties": {},
         }
-        # Gemini rejects JSON Schema keys it does not understand; keep a
-        # conservative subset of what mcptools actually advertises.
         if isinstance(parameters, dict):
-            parameters = {
-                k: v
-                for k, v in parameters.items()
-                if k in {"type", "properties", "required", "description"}
-            }
+            parameters = _sanitize_schema(parameters)
             if "type" not in parameters:
                 parameters["type"] = "object"
         declarations.append(
@@ -103,10 +125,23 @@ def call_llm(
         )
         chat = model.start_chat(enable_automatic_function_calling=False)
 
-    try:
-        response = chat.send_message(prompt)
-    except Exception as exc:  # provider / network / safety
-        raise LLMError(f"{DEFAULT_MODEL} request failed: {exc}") from exc
+    last_exc: Exception | None = None
+    for attempt in range(4):
+        try:
+            response = chat.send_message(prompt)
+            last_exc = None
+            break
+        except Exception as exc:  # provider / network / safety
+            last_exc = exc
+            msg = str(exc)
+            if "429" in msg and "PerDay" not in msg and attempt < 3:
+                delay = 20 * (attempt + 1)
+                print(f"LLM 429; retrying in {delay}s (attempt {attempt + 1}/3)", flush=True)
+                time.sleep(delay)
+                continue
+            raise LLMError(f"{DEFAULT_MODEL} request failed: {exc}") from exc
+    if last_exc is not None:
+        raise LLMError(f"{DEFAULT_MODEL} request failed: {last_exc}") from last_exc
 
     text_parts: list[str] = []
     tool_calls: list[ToolCall] = []
@@ -149,8 +184,20 @@ def function_response_prompt(name: str, result: str) -> list[dict[str, Any]]:
 
 
 def _coerce(value: Any) -> Any:
-    if hasattr(value, "items"):
+    if isinstance(value, dict):
         return {k: _coerce(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return [_coerce(v) for v in value]
-    return value
+    if isinstance(value, (str, bytes, int, float, bool)) or value is None:
+        return value
+    if hasattr(value, "items"):
+        try:
+            return {k: _coerce(v) for k, v in value.items()}
+        except Exception:
+            pass
+    if hasattr(value, "__iter__"):
+        try:
+            return [_coerce(v) for v in list(value)]
+        except TypeError:
+            pass
+    return str(value)

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package oteldemo;
+
+// Minimal CartService slice of pb/demo.proto for triggering EmptyCart.
+service CartService {
+  rpc EmptyCart(EmptyCartRequest) returns (Empty) {}
+}
+
+message EmptyCartRequest {
+  string user_id = 1;
+}
+
+message Empty {}

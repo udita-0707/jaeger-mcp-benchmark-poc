@@ -2,7 +2,7 @@
 """Run one evaluation against the session-free Jaeger MCP server.
 
 Connects to ``<JAEGER_ENDPOINT>/api/ai/mcp/`` (not the ACP sidecar), drives
-gemini-1.5-flash at temperature 0 through ``llm.call_llm``, and writes a
+gemini-3.5-flash at temperature 0 through ``llm.call_llm``, and writes a
 trajectory JSON. High-level tool variant is composed client-side from the
 real tools in server.go — Jaeger is not forked.
 
@@ -31,7 +31,7 @@ HARNESS_DIR = Path(__file__).resolve().parent
 if str(HARNESS_DIR) not in sys.path:
     sys.path.insert(0, str(HARNESS_DIR))
 
-from llm import LLMError, call_llm, function_response_prompt  # noqa: E402
+from llm import LLMError, _coerce, call_llm, function_response_prompt  # noqa: E402
 
 DEFAULT_JAEGER = os.environ.get("JAEGER_ENDPOINT", "http://localhost:16686")
 MCP_PATH = "/api/ai/mcp/"
@@ -53,6 +53,19 @@ VALID_MCP_TOOLS = {
 }
 HIGHLEVEL_NAME = "analyze_trace_fault"
 BROKEN_SCENARIOS = {"product_catalog_failure"}
+
+# Span-level evidence: operation substring + discriminating status message.
+# Operation name alone is not evidence — get_span_names lists it in a catalog.
+EVIDENCE = {
+    "cart_failure": {
+        "span": "oteldemo.CartService/EmptyCart",
+        "message": "can't access cart storage",
+    },
+    "product_catalog_failure": {
+        "span": "oteldemo.ProductCatalogService/GetProduct",
+        "message": "product catalog fail feature flag enabled",
+    },
+}
 
 SCENARIO_PROMPTS = {
     "cart_failure": EVAL_PROMPT,
@@ -289,8 +302,18 @@ async def fetch_trace_json(jaeger: str, trace_id: str) -> dict[str, Any] | None:
     return None
 
 
-def first_trace_id(steps: list[dict[str, Any]]) -> str | None:
-    for step in steps:
+def first_trace_id(steps: list[dict[str, Any]], message: str = "") -> str | None:
+    """Prefer a trace_id from a step that already contains the evidence message."""
+    ordered = list(steps)
+    if message:
+        needle = message.lower()
+        preferred = [
+            step
+            for step in steps
+            if needle in ((step.get("response_excerpt") or "") + (step.get("response_summary") or "")).lower()
+        ]
+        ordered = preferred + [s for s in steps if s not in preferred]
+    for step in ordered:
         args = step.get("input") or {}
         if args.get("trace_id"):
             return args["trace_id"]
@@ -308,12 +331,16 @@ def first_trace_id(steps: list[dict[str, Any]]) -> str | None:
     return None
 
 
-def evidence_appeared(steps: list[dict[str, Any]], marker: str) -> bool:
-    hay = " ".join(
-        (s.get("response_excerpt") or "") + " " + (s.get("response_summary") or "")
-        for s in steps
-    )
-    return marker in hay
+def evidence_appeared(steps: list[dict[str, Any]], marker: str, message: str = "") -> bool:
+    for step in steps:
+        hay = (step.get("response_excerpt") or "") + " " + (step.get("response_summary") or "")
+        if marker and marker not in hay:
+            continue
+        if message and message.lower() not in hay.lower():
+            continue
+        if marker or message:
+            return True
+    return False
 
 
 async def run(args: argparse.Namespace) -> int:
@@ -336,7 +363,7 @@ async def run(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     print(f"MCP: {mcp_url}")
-    print(f"LLM: {os.environ.get('LLM_MODEL', 'gemini-1.5-flash')} temperature=0")
+    print(f"LLM: {os.environ.get('LLM_MODEL', 'gemini-3.5-flash')} temperature=0")
     print(f"variant={args.variant} skill={args.skill} scenario={args.scenario}")
 
     listed = await session.list_tools()
@@ -368,7 +395,12 @@ async def run(args: argparse.Namespace) -> int:
         "You are evaluating Jaeger MCP tools against a seeded, trace-solvable fault. "
         "Use tools to inspect traces. Name the originating span (service + operation) "
         "and the status message. Do not guess mechanisms that are not on a span. "
-        "When you have the root cause, stop calling tools and write the final answer."
+        "Flagd / OpenFeature client spans (ResolveBoolean, ResolveFloat) can be Error "
+        "and are not the user-visible cart failure — skip them unless the user asked "
+        "about feature flags. Prefer traces whose root_span_name matches the reported "
+        "operation (EmptyCart, GetProduct). "
+        "As soon as a tool response includes an Error span whose status.message names "
+        "the failure, stop calling tools and write the final answer."
     )
     if skill_text:
         system = system + "\n\n# Active Skill\n\n" + skill_text
@@ -394,6 +426,7 @@ async def run(args: argparse.Namespace) -> int:
             started = int((time.time() - t0) * 1000)
             name = call.name
             arguments = call.args or {}
+            arguments = {k: _coerce(v) for k, v in arguments.items()}
             try:
                 if name == HIGHLEVEL_NAME:
                     response_text, is_error = await run_highlevel_tool(session, arguments)
@@ -423,22 +456,25 @@ async def run(args: argparse.Namespace) -> int:
 
     payload = {
         "scenario": args.scenario,
-        "llm": os.environ.get("LLM_MODEL", "gemini-1.5-flash"),
+        "llm": os.environ.get("LLM_MODEL", "gemini-3.5-flash"),
         "tool_variant": args.variant,
         "skill_variant": args.skill,
         "trajectory": steps,
         "final_answer": final_answer,
         "run_timestamp": datetime.now(timezone.utc).isoformat(),
     }
-    out_path = REPO_ROOT / "trajectories" / f"{args.scenario}_baseline.json"
+    out_path = (
+        REPO_ROOT
+        / "trajectories"
+        / f"{args.scenario}_{args.variant}_{args.skill}.json"
+    )
     out_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     total_tokens = sum(s["response_length_tokens"] for s in steps)
-    marker = {
-        "cart_failure": "oteldemo.CartService/EmptyCart",
-        "product_catalog_failure": "oteldemo.ProductCatalogService/GetProduct",
-    }.get(args.scenario, "")
-    appeared = evidence_appeared(steps, marker) if marker else False
+    evidence = EVIDENCE.get(args.scenario) or {}
+    marker = evidence.get("span", "")
+    message = evidence.get("message", "")
+    appeared = evidence_appeared(steps, marker, message) if marker else False
 
     print()
     print(f"Wrote {out_path}")
@@ -447,7 +483,8 @@ async def run(args: argparse.Namespace) -> int:
     if marker:
         print(
             f"Whether the root cause appeared in any response "
-            f"(marker {marker!r}): {'yes' if appeared else 'no — manual check the trajectory'}"
+            f"(marker {marker!r} + message {message!r}): "
+            f"{'yes' if appeared else 'no — manual check the trajectory'}"
         )
     else:
         print("Whether the root cause appeared in any response: manual check the trajectory")
@@ -456,7 +493,7 @@ async def run(args: argparse.Namespace) -> int:
         print(final_answer[:500])
 
     if os.environ.get("CAPTURE_FIXTURE", "").lower() in {"1", "true", "yes"}:
-        trace_id = first_trace_id(steps)
+        trace_id = first_trace_id(steps, message=message)
         fixture_dir = REPO_ROOT / "scenarios" / args.scenario
         fixture_path = fixture_dir / "fixture.otlp.json"
         if not trace_id:

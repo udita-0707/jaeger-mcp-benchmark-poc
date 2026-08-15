@@ -1,5 +1,358 @@
 {
-  "_placeholder": true,
-  "_instructions": "Run the harness/run_eval.py script with CAPTURE_FIXTURE=true to populate this file. Requires OTel Demo running locally with cartFailure enabled.",
-  "_expected_structure": "OTLP JSON trace with resourceSpans, scopeSpans, spans array"
+  "data": [
+    {
+      "traceID": "734d5306681551201baca8dbb653b185",
+      "spans": [
+        {
+          "traceID": "734d5306681551201baca8dbb653b185",
+          "spanID": "65fa4ac417dee9de",
+          "operationName": "POST",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "734d5306681551201baca8dbb653b185",
+              "spanID": "a73c47adbefc6bcd"
+            }
+          ],
+          "startTime": 1786823446634190,
+          "duration": 5626,
+          "tags": [
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "System.Net.Http"
+            },
+            {
+              "key": "http.request.method",
+              "type": "string",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "network.protocol.version",
+              "type": "string",
+              "value": "2"
+            },
+            {
+              "key": "server.address",
+              "type": "string",
+              "value": "flagd"
+            },
+            {
+              "key": "server.port",
+              "type": "int64",
+              "value": 8013
+            },
+            {
+              "key": "url.full",
+              "type": "string",
+              "value": "http://flagd:8013/flagd.evaluation.v2.Service/ResolveFloat"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "734d5306681551201baca8dbb653b185",
+          "spanID": "a73c47adbefc6bcd",
+          "operationName": "flagd.evaluation.v2.Service/ResolveFloat",
+          "references": [
+            {
+              "refType": "CHILD_OF",
+              "traceID": "734d5306681551201baca8dbb653b185",
+              "spanID": "a5609dba715fc9ea"
+            }
+          ],
+          "startTime": 1786823446633953,
+          "duration": 6781,
+          "tags": [
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "OpenTelemetry.Instrumentation.GrpcNetClient"
+            },
+            {
+              "key": "otel.scope.version",
+              "type": "string",
+              "value": "1.15.1-beta.1"
+            },
+            {
+              "key": "rpc.grpc.status_code",
+              "type": "int64",
+              "value": 0
+            },
+            {
+              "key": "rpc.method",
+              "type": "string",
+              "value": "ResolveFloat"
+            },
+            {
+              "key": "rpc.service",
+              "type": "string",
+              "value": "flagd.evaluation.v2.Service"
+            },
+            {
+              "key": "rpc.system",
+              "type": "string",
+              "value": "grpc"
+            },
+            {
+              "key": "server.address",
+              "type": "string",
+              "value": "flagd"
+            },
+            {
+              "key": "server.port",
+              "type": "int64",
+              "value": 8013
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "client"
+            }
+          ],
+          "logs": [],
+          "processID": "p1",
+          "warnings": null
+        },
+        {
+          "traceID": "734d5306681551201baca8dbb653b185",
+          "spanID": "a5609dba715fc9ea",
+          "operationName": "POST /oteldemo.CartService/EmptyCart",
+          "references": [],
+          "startTime": 1786823446596055,
+          "duration": 255305,
+          "tags": [
+            {
+              "key": "otel.scope.name",
+              "type": "string",
+              "value": "Microsoft.AspNetCore"
+            },
+            {
+              "key": "grpc.method",
+              "type": "string",
+              "value": "/oteldemo.CartService/EmptyCart"
+            },
+            {
+              "key": "grpc.status_code",
+              "type": "string",
+              "value": "9"
+            },
+            {
+              "key": "http.request.method",
+              "type": "string",
+              "value": "POST"
+            },
+            {
+              "key": "http.response.status_code",
+              "type": "int64",
+              "value": 200
+            },
+            {
+              "key": "http.route",
+              "type": "string",
+              "value": "/oteldemo.CartService/EmptyCart"
+            },
+            {
+              "key": "network.protocol.version",
+              "type": "string",
+              "value": "2"
+            },
+            {
+              "key": "server.address",
+              "type": "string",
+              "value": "cart"
+            },
+            {
+              "key": "server.port",
+              "type": "int64",
+              "value": 8080
+            },
+            {
+              "key": "url.path",
+              "type": "string",
+              "value": "/oteldemo.CartService/EmptyCart"
+            },
+            {
+              "key": "url.scheme",
+              "type": "string",
+              "value": "http"
+            },
+            {
+              "key": "user.id",
+              "type": "string",
+              "value": "benchmark-user"
+            },
+            {
+              "key": "user_agent.original",
+              "type": "string",
+              "value": "grpcurl/v1.9.3 grpc-go/1.61.0"
+            },
+            {
+              "key": "span.kind",
+              "type": "string",
+              "value": "server"
+            },
+            {
+              "key": "otel.status_code",
+              "type": "string",
+              "value": "ERROR"
+            },
+            {
+              "key": "error",
+              "type": "bool",
+              "value": true
+            },
+            {
+              "key": "otel.status_description",
+              "type": "string",
+              "value": "Status(StatusCode=\"FailedPrecondition\", Detail=\"Can't access cart storage. System.ApplicationException: Wasn't able to connect to redis\n   at cart.cartstore.ValkeyCartStore.EnsureRedisConnected() in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 98\n   at cart.cartstore.ValkeyCartStore.EmptyCartAsync(String userId) in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 182\")"
+            }
+          ],
+          "logs": [
+            {
+              "timestamp": 1786823446629731,
+              "fields": [
+                {
+                  "key": "event",
+                  "type": "string",
+                  "value": "Empty cart"
+                }
+              ]
+            },
+            {
+              "timestamp": 1786823446842952,
+              "fields": [
+                {
+                  "key": "event",
+                  "type": "string",
+                  "value": "exception"
+                },
+                {
+                  "key": "exception.message",
+                  "type": "string",
+                  "value": "Status(StatusCode=\"FailedPrecondition\", Detail=\"Can't access cart storage. System.ApplicationException: Wasn't able to connect to redis\n   at cart.cartstore.ValkeyCartStore.EnsureRedisConnected() in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 98\n   at cart.cartstore.ValkeyCartStore.EmptyCartAsync(String userId) in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 182\")"
+                },
+                {
+                  "key": "exception.stacktrace",
+                  "type": "string",
+                  "value": "Grpc.Core.RpcException: Status(StatusCode=\"FailedPrecondition\", Detail=\"Can't access cart storage. System.ApplicationException: Wasn't able to connect to redis\n   at cart.cartstore.ValkeyCartStore.EnsureRedisConnected() in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 98\n   at cart.cartstore.ValkeyCartStore.EmptyCartAsync(String userId) in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 182\")\n   at cart.cartstore.ValkeyCartStore.EmptyCartAsync(String userId) in /usr/src/app/src/cartstore/ValkeyCartStore.cs:line 191\n   at cart.services.CartService.EmptyCart(EmptyCartRequest request, ServerCallContext context) in /usr/src/app/src/services/CartService.cs:line 85"
+                },
+                {
+                  "key": "exception.type",
+                  "type": "string",
+                  "value": "Grpc.Core.RpcException"
+                }
+              ]
+            },
+            {
+              "timestamp": 1786823446643058,
+              "fields": [
+                {
+                  "key": "event",
+                  "type": "string",
+                  "value": "feature_flag.evaluation"
+                },
+                {
+                  "key": "feature_flag.key",
+                  "type": "string",
+                  "value": "cartFailure"
+                },
+                {
+                  "key": "feature_flag.provider.name",
+                  "type": "string",
+                  "value": "flagd Provider"
+                },
+                {
+                  "key": "feature_flag.result.reason",
+                  "type": "string",
+                  "value": "static"
+                },
+                {
+                  "key": "feature_flag.result.value",
+                  "type": "float64",
+                  "value": 1
+                },
+                {
+                  "key": "feature_flag.result.variant",
+                  "type": "string",
+                  "value": "100%"
+                }
+              ]
+            }
+          ],
+          "processID": "p1",
+          "warnings": null
+        }
+      ],
+      "processes": {
+        "p1": {
+          "serviceName": "cart",
+          "tags": [
+            {
+              "key": "container.id",
+              "type": "string",
+              "value": "84116e48e7c16063fface959ba4121c2ad9334350e49969195524b23407189fd"
+            },
+            {
+              "key": "host.arch",
+              "type": "string",
+              "value": "arm64"
+            },
+            {
+              "key": "host.name",
+              "type": "string",
+              "value": "84116e48e7c1"
+            },
+            {
+              "key": "service.instance.id",
+              "type": "string",
+              "value": "e42555de-0e36-4a08-9cba-73c38f9b8b2e"
+            },
+            {
+              "key": "service.namespace",
+              "type": "string",
+              "value": "opentelemetry-demo"
+            },
+            {
+              "key": "service.version",
+              "type": "string",
+              "value": "3.0.0"
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "type": "string",
+              "value": "dotnet"
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "type": "string",
+              "value": "opentelemetry"
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "type": "string",
+              "value": "1.15.3"
+            }
+          ]
+        }
+      },
+      "warnings": null
+    }
+  ],
+  "total": 0,
+  "limit": 0,
+  "offset": 0,
+  "errors": null
 }

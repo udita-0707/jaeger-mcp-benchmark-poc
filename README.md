@@ -12,7 +12,7 @@ Private pre-application POC for LFX Mentorship Term 3: [Benchmarking the AI Assi
 
 ```bash
 docker compose up -d
-# Trigger cartFailure: open http://localhost:4000 and set cartFailure to 100%, then hit EmptyCart on the cart service (localhost:7070) or the shop at http://localhost:8080 if you started the full demo.
+# Trigger: http://localhost:4000 set cartFailure to 100%, then EmptyCart on localhost:7070. Jaeger UI is http://localhost:16686 (not :8080 — this compose does not run the shop frontend).
 export GEMINI_API_KEY=... JAEGER_ENDPOINT=http://localhost:16686
 python harness/run_eval.py --scenario cart_failure --variant granular --skill stepwise
 python harness/score.py trajectories/cart_failure_baseline.json --save

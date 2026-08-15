@@ -1,8 +1,12 @@
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Call error rate | [run harness] | |
-| Steps to evidence | [run harness] | |
-| Context bloat ratio | [run harness] | |
-| Root-cause accuracy | [run harness] | |
+# Baseline metrics (`cart_failure`)
 
-Call error rate is invalid tool calls (unknown name or MCP `isError`) over total calls — 0.00 is expected on this schema; a 0.00 that coincides with a long cycle is repetition, not a win. Steps to evidence is the 1-based index of the first tool response that contains the span-level marker (`oteldemo.CartService/EmptyCart`); service names do not count. Context bloat is delivered response tokens over the estimated tokens of the evidence span alone; closer to 1 is better, and silent truncation is not “efficient.” Root-cause accuracy is binary: the final answer must name the seeded locus (operation + status message), not a plausible mechanism that is not on the span.
+2×2 complete. Model `gemini-3.7-flash`, temperature 0. See `results/ab_cart_failure.md`.
+
+| Arm | Calls | Steps to evidence | Bloat | Accuracy |
+|---|---|---|---|---|
+| highlevel × stepwise | 4 | 4 | 14.39 | 1 |
+| granular × goaloriented | 4 | 4 | 18.64 | 1 |
+| highlevel × goaloriented | 8 | 8 | 118.09 | 1 |
+| granular × stepwise | 12 | 12 | 123.67 | 1 |
+
+All four named `Can't access cart storage` on `POST /oteldemo.CartService/EmptyCart`. The high-level tool wins **tokens and steps** on this fault; it does not win accuracy (already 1 everywhere). Goal-oriented high-level still wasted searches until it called `analyze_trace_fault`.

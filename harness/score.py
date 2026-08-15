@@ -32,8 +32,14 @@ DEFAULT_VALID_TOOLS = [
 ]
 
 DEFAULT_EVIDENCE = {
-    "cart_failure": "oteldemo.CartService/EmptyCart",
-    "product_catalog_failure": "oteldemo.ProductCatalogService/GetProduct",
+    "cart_failure": {
+        "span": "oteldemo.CartService/EmptyCart",
+        "message": "can't access cart storage",
+    },
+    "product_catalog_failure": {
+        "span": "oteldemo.ProductCatalogService/GetProduct",
+        "message": "product catalog fail feature flag enabled",
+    },
 }
 
 DEFAULT_ACCEPTABLE = {
@@ -100,7 +106,11 @@ def compute(data: dict, args: argparse.Namespace) -> dict:
     scenario = data.get("scenario") or "cart_failure"
     steps = data.get("trajectory") or []
     valid = {n.strip() for n in args.valid_tools.split(",") if n.strip()}
-    evidence = args.evidence_span or DEFAULT_EVIDENCE.get(scenario, "")
+    evidence_cfg = DEFAULT_EVIDENCE.get(scenario) or {}
+    if isinstance(evidence_cfg, str):
+        evidence_cfg = {"span": evidence_cfg, "message": ""}
+    evidence = args.evidence_span or evidence_cfg.get("span") or ""
+    evidence_message = evidence_cfg.get("message") or ""
     min_tokens = args.min_tokens or DEFAULT_MIN_TOKENS.get(scenario, 80)
     if args.acceptable:
         acceptable = [s.strip().lower() for s in args.acceptable.split(",") if s.strip()]
@@ -116,18 +126,24 @@ def compute(data: dict, args: argparse.Namespace) -> dict:
     call_error_rate = (invalid / total) if total else 0.0
 
     steps_to_evidence: int | None = None
-    if evidence:
+    if evidence or evidence_message:
         for step in steps:
-            if evidence in haystack(step):
-                steps_to_evidence = step.get("step")
-                break
+            hay = haystack(step)
+            if evidence and evidence not in hay:
+                continue
+            if evidence_message and evidence_message.lower() not in hay.lower():
+                continue
+            steps_to_evidence = step.get("step")
+            break
 
     total_tokens = sum(int(step.get("response_length_tokens") or 0) for step in steps)
     bloat = (total_tokens / min_tokens) if min_tokens else None
 
     final = (data.get("final_answer") or "").lower()
     accuracy = 0
-    if final and acceptable:
+    if final and evidence_message:
+        accuracy = int(evidence_message.lower() in final)
+    elif final and acceptable:
         accuracy = int(any(s in final for s in acceptable))
 
     return {
@@ -137,6 +153,7 @@ def compute(data: dict, args: argparse.Namespace) -> dict:
         "invalid_calls": invalid,
         "steps_to_evidence": steps_to_evidence,
         "evidence_span": evidence,
+        "evidence_message": evidence_message,
         "context_bloat_ratio": bloat,
         "total_response_tokens": total_tokens,
         "min_tokens": min_tokens,
@@ -157,14 +174,15 @@ def render(metrics: dict) -> str:
         "| Metric | Value | Notes |",
         "|--------|-------|-------|",
         f"| Call error rate | {metrics['call_error_rate']:.2f} ({metrics['invalid_calls']}/{metrics['n_calls']}) | invalid = unknown name or MCP isError |",
-        f"| Steps to evidence | {ste_s} | marker `{metrics['evidence_span']}` |",
+        f"| Steps to evidence | {ste_s} | marker `{metrics['evidence_span']}` + `{metrics.get('evidence_message') or ''}` |",
         f"| Context bloat ratio | {bloat_s} | {metrics['total_response_tokens']} response tokens / {metrics['min_tokens']} min |",
         f"| Root-cause accuracy | {acc} | substring match against ground_truth.md variants |",
         "",
         "Call error rate is invalid tool calls over total calls; 0.00 is expected on this schema, "
         "and a 0.00 that coincides with a long cycle is a different failure (repetition), not a win. "
         "Steps to evidence is the 1-based index of the first tool response that contains the "
-        "span-level marker — service names do not count. Context bloat is delivered response "
+        "span-level marker **and** the discriminating status message — a catalog listing of "
+        "the operation name does not count. Context bloat is delivered response "
         "tokens over the estimated tokens of the evidence span alone; closer to 1 is better, "
         "and silent truncation is not scored as efficiency. Root-cause accuracy is binary: "
         "the final answer must name the seeded locus (operation + status message), not a "
@@ -198,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     table = render(metrics)
     print(table, end="")
     if args.save:
-        out = REPO_ROOT / "results" / "baseline_metrics.md"
+        out = REPO_ROOT / "results" / f"{path.stem}.md"
         out.write_text(table, encoding="utf-8")
         print(f"Wrote {out}")
     return 0

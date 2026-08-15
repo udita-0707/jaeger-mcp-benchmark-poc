@@ -21,7 +21,10 @@ failure, not the symptoms.
 ## Procedure
 
 1. If you do not yet have a `trace_id`, call `search_traces` with
-   `with_errors: true` and take the first matching `trace_id`.
+   `with_errors: true`. Do **not** take the first hit blindly: skip traces
+   whose `root_span_name` is a Flagd/OpenFeature evaluation
+   (`ResolveBoolean`, `ResolveFloat`). Prefer a trace whose `root_span_name`
+   matches the user-reported operation, or pass that name as `span_name`.
 2. Call `get_trace_errors` with that `trace_id`. List every returned span's
    `service`, `span_name`, and `status.message`.
 3. Call `get_trace_topology` with the same `trace_id`. Using each span's
@@ -35,6 +38,8 @@ failure, not the symptoms.
 6. Report only what those tool responses contain: root-cause span (service,
    operation, error message), the propagation chain as topology paths, and
    a recommendation. Do not name a mechanism that does not appear on a span.
+   Once `status.message` names the failure, **stop calling tools** and write
+   that answer.
 
 ## Gotchas
 
@@ -42,3 +47,4 @@ failure, not the symptoms.
 - Multiple independent root causes can exist in a single trace.
 - `get_trace_errors` may truncate; compare `total_error_count` to the length
   of `spans` before treating the list as complete.
+- Feature-flag client spans can be Error and are not the user-visible fault.

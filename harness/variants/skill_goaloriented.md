@@ -41,3 +41,7 @@ span, say so and name the missing evidence class instead of guessing.
 - `get_trace_errors` may truncate; `total_error_count` vs. returned `spans`
   is the truncation signal.
 - Service names alone are not a root cause.
+- Feature-flag client spans (`ResolveBoolean` / `ResolveFloat`) can be Error
+  and are not the user-visible fault. Filter `search_traces` by the reported
+  operation's `span_name`.
+- Once `status.message` names the failure, stop calling tools and answer.

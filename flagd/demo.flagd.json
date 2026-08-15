@@ -2,7 +2,7 @@
   "$schema": "https://flagd.dev/schema/v0/flags.json",
   "flags": {
     "cartFailure": {
-      "defaultVariant": "off",
+      "defaultVariant": "100%",
       "description": "Fail cart service n% of the time. Set to 100% to seed the cart_failure scenario.",
       "state": "ENABLED",
       "variants": {
