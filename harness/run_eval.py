@@ -2,7 +2,7 @@
 """Run one evaluation against the session-free Jaeger MCP server.
 
 Connects to ``<JAEGER_ENDPOINT>/api/ai/mcp/`` (not the ACP sidecar), drives
-gemini-3.5-flash at temperature 0 through ``llm.call_llm``, and writes a
+gemini-3.7-flash at temperature 0 through ``llm.call_llm``, and writes a
 trajectory JSON. High-level tool variant is composed client-side from the
 real tools in server.go — Jaeger is not forked.
 
@@ -363,7 +363,7 @@ async def run(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     print(f"MCP: {mcp_url}")
-    print(f"LLM: {os.environ.get('LLM_MODEL', 'gemini-3.5-flash')} temperature=0")
+    print(f"LLM: {os.environ.get('LLM_MODEL', 'gemini-3.7-flash')} temperature=0")
     print(f"variant={args.variant} skill={args.skill} scenario={args.scenario}")
 
     listed = await session.list_tools()
@@ -456,7 +456,7 @@ async def run(args: argparse.Namespace) -> int:
 
     payload = {
         "scenario": args.scenario,
-        "llm": os.environ.get("LLM_MODEL", "gemini-3.5-flash"),
+        "llm": os.environ.get("LLM_MODEL", "gemini-3.7-flash"),
         "tool_variant": args.variant,
         "skill_variant": args.skill,
         "trajectory": steps,

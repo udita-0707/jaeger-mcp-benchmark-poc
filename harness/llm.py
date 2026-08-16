@@ -4,7 +4,7 @@ Every model call in this harness goes through ``call_llm(prompt, tools)``.
 Swap the body of ``call_llm`` (or set ``LLM_MODEL``) without touching
 ``run_eval.py`` scoring or the MCP loop.
 
-Default: gemini-3.5-flash via Google AI Studio (``GEMINI_API_KEY``), temperature 0.
+Default: gemini-3.7-flash via Google AI Studio (``GEMINI_API_KEY``), temperature 0.
 ``gemini-1.5-flash`` and ``gemini-2.5-flash`` 404 for new AI Studio keys; override with ``LLM_MODEL``.
 """
 
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gemini-3.5-flash")
+DEFAULT_MODEL = os.environ.get("LLM_MODEL", "gemini-3.7-flash")
 DEFAULT_TEMPERATURE = 0.0
 
 

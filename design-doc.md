@@ -36,7 +36,7 @@ A scenario is **trace-solvable** if and only if all three hold:
 
 **Framework: Opik.** The one technical reason over Langfuse or Arize Phoenix: Opik ships a native [`TrajectoryAccuracy`](https://www.comet.com/docs/opik/evaluation/metrics/trajectory_accuracy) metric that scores a ReAct-style list of `{thought, action, observation}` steps plus `final_result` — the same structure this harness records — and accepts custom `BaseMetric` subclasses so call-error-rate, steps-to-evidence, and context-bloat become experiment columns on the traces `@track` already logged. Langfuse is generation/trace observability and prompt management; Phoenix is embedding/RAG evaluation. Neither treats a tool-call trajectory as a first-class scored object. This POC scores locally (`harness/score.py`) so the repo runs without an Opik server; the mentorship wires the same JSONL into Opik experiments.
 
-**LLM: `gemini-3.5-flash`** via Google AI Studio (`GEMINI_API_KEY`), temperature `0` (was `gemini-1.5-flash`; that model and `gemini-2.5-flash` 404 for new AI Studio keys as of 2026-08-16). Flash is cheap enough that a 2×2 A/B (tool shape × Skill wording) × N scenarios stays in a student's API budget; it has native function calling, which is the whole point of measuring MCP tool schemas; and Jaeger's existing AI sidecar already speaks Gemini, so the harness evaluates the model family operators actually run. All provider calls go through `harness/llm.py:call_llm(prompt, tools)` so swapping the model does not touch the evaluation loop. The harness drives the **session-free** `/api/ai/mcp/` endpoint, not the ACP sidecar — otherwise tool-shape × Skill effects are confounded by BYOA routing ([#7832](https://github.com/jaegertracing/jaeger/issues/7832)).
+**LLM: `gemini-3.7-flash`** via Google AI Studio (`GEMINI_API_KEY`), temperature `0` (was `gemini-1.5-flash`; that model and `gemini-2.5-flash` 404 for new AI Studio keys as of 2026-08-16). Flash is cheap enough that a 2×2 A/B (tool shape × Skill wording) × N scenarios stays in a student's API budget; it has native function calling, which is the whole point of measuring MCP tool schemas; and Jaeger's existing AI sidecar already speaks Gemini, so the harness evaluates the model family operators actually run. All provider calls go through `harness/llm.py:call_llm(prompt, tools)` so swapping the model does not touch the evaluation loop. The harness drives the **session-free** `/api/ai/mcp/` endpoint, not the ACP sidecar — otherwise tool-shape × Skill effects are confounded by BYOA routing ([#7832](https://github.com/jaegertracing/jaeger/issues/7832)).
 
 **Four metrics** (plus the process/outcome split from Cloud-OpsBench; OpenRCA ICLR'25 scores final-answer exact match only and is not used here):
 
@@ -52,7 +52,7 @@ A scenario is **trace-solvable** if and only if all three hold:
 ```json
 {
   "scenario": "cart_failure",
-  "llm": "gemini-3.5-flash",
+  "llm": "gemini-3.7-flash",
   "tool_variant": "granular",
   "skill_variant": "stepwise",
   "run_timestamp": "ISO8601",
@@ -131,7 +131,7 @@ That split is the decision the default assistant configuration needs. If stepwis
 
 ## 6. Scope and non-goals
 
-**This POC covers:** 1 valid fault scenario (`cartFailure`), 1 documented-broken scenario (`productCatalogFailure`, not scored), 1 LLM (`gemini-3.5-flash`, temperature 0), baseline trajectory capture against the live session-free MCP server, manual metric computation via `score.py`.
+**This POC covers:** 1 valid fault scenario (`cartFailure`), 1 documented-broken scenario (`productCatalogFailure`, not scored), 1 LLM (`gemini-3.7-flash`, temperature 0), baseline trajectory capture against the live session-free MCP server, manual metric computation via `score.py`.
 
 **Full mentorship scope:** 5–10 verified trace-solvable scenarios (including ablated twins for abstention, scored as the *gap* in abstention rate, not raw hedge rate); automated scoring in Opik with custom `BaseMetric`s plus `TrajectoryAccuracy`; full 2×2 A/B across both variant pairs; per-fault-class reporting (not one pooled number); upstreamed recommendation for the default tool surface and Skill wording; optional cycle/repetition metric, which the four headline numbers do not catch.
 
