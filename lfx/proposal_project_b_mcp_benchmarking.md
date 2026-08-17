@@ -3,6 +3,7 @@
 Mentee: Udita  
 Email: udita.23csai@nst.rishihood.edu.in  
 GitHub: https://github.com/udita-0707  
+POC: https://github.com/udita-0707/jaeger-mcp-benchmark-poc  
 Project: Benchmarking the AI Assistant's MCP Tools and Skills ([jaegertracing/jaeger#9135](https://github.com/jaegertracing/jaeger/issues/9135))  
 Term: LFX Mentorship 2026 Term 3 (Sep–Nov)  
 Availability: full-time for the LFX term; no overlapping internship.
@@ -11,7 +12,7 @@ I am a final-year B.Tech CS (AI) student at Newton School of Technology (graduat
 
 Issue #9135 states that MCP tool shape and Skill wording are designed by intuition and that Jaeger needs trajectory metrics (call error rate, steps-to-evidence, context bloat) against strictly trace-solvable faults, not a better chatbot. That is the project I am applying for: a repeatable harness on the session-free `/api/ai/mcp/` surface, a verified scenario suite, and a 2×2 of granular vs high-level tools against stepwise vs goal-oriented Skills, ending in a default-configuration recommendation backed by numbers.
 
-The work matches three things I already do. At Razorpay I A/B'd retrieval configurations in a Figma-to-Code RAG pipeline. CodeLens AI (LangChain, FastAPI, PydanticOutputParser) is an agentic review loop where the failure mode is malformed or redundant tool calls, which is call error rate and context bloat. A completed private POC already drives the nine registered tools in `cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/server.go`, scores Cloud-OpsBench-style trajectories, and has a live 2×2 on OpenTelemetry Demo `cartFailure`. Accuracy saturated at 1 on all four arms; cost did not (bloat 14.39 vs 123.67). The remaining term is verifying 5–10 faults where accuracy actually moves, wiring the same JSONL into Opik, and writing the recommendation.
+The work matches three things I already do. At Razorpay I A/B'd retrieval configurations in a Figma-to-Code RAG pipeline. CodeLens AI (LangChain, FastAPI, PydanticOutputParser) is an agentic review loop where the failure mode is malformed or redundant tool calls, which is call error rate and context bloat. A completed POC already drives the nine registered tools in `cmd/jaeger/internal/extension/jaegerquery/internal/mcptools/server.go`, scores Cloud-OpsBench-style trajectories, and has a live 2×2 on OpenTelemetry Demo `cartFailure`. Accuracy saturated at 1 on all four arms; cost did not (bloat 14.39 vs 123.67). The remaining term is verifying 5–10 faults where accuracy actually moves, wiring the same JSONL into Opik, and writing the recommendation.
 
 I have read [jaegertracing/jaeger#9135](https://github.com/jaegertracing/jaeger/issues/9135) including the thread on session-free MCP vs ACP, abstention/ablation, `MaxSpanDetailsPerRequest`, and `allowed-tools` being advisory; [#8440](https://github.com/jaegertracing/jaeger/issues/8440), [#7832](https://github.com/jaegertracing/jaeger/issues/7832), [#8401](https://github.com/jaegertracing/jaeger/issues/8401); and the [application](https://www.jaegertracing.io/mentorship/applying/) and [for-mentees](https://www.jaegertracing.io/mentorship/for-mentees/) guidelines. The proposal follows.
 
@@ -154,4 +155,4 @@ Soumya's [#8440](https://github.com/jaegertracing/jaeger/issues/8440) Skills fra
 
 ## 8. Blog post outline
 
-Hariom Gupta, Harshith Mente, and Saransh Shankar each published a process write-up after their terms. This one has a reason to exist beyond that: the public Jaeger AI docs will otherwise inherit "add a composite tool" or "write better Skills" as folklore, and the 8× Skill-wording split plus the `productCatalogFailure` rejection (opentelemetry-demo#3816) are currently sitting in a private repo. The post is the first public place those two results sit next to a recommended default configuration, with the final four-metric table, so a later Skill author can copy the checklist instead of another intuition.
+Hariom Gupta, Harshith Mente, and Saransh Shankar each published a process write-up after their terms. This one has a reason to exist beyond that: the public Jaeger AI docs will otherwise inherit "add a composite tool" or "write better Skills" as folklore. The 8× Skill-wording split and the `productCatalogFailure` rejection (opentelemetry-demo#3816) live in the POC repo; the post is where those two results sit next to a recommended default configuration, with the final four-metric table, so a later Skill author can copy the checklist instead of another intuition.
