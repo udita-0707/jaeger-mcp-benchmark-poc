@@ -146,11 +146,11 @@ What I cut first if behind: the Skill-wording dimension (weeks 9–10) defers to
 
 ## 6. Why me
 
-The POC already exists, so weeks 1–4 are not spent rediscovering that `cartFailure` saturates accuracy. The term is the harder suite, Opik, and a default-configuration recommendation that can merge without a rewrite. I already land work under Yuri and Jonah's review in jaeger-ui (#4054, #4149, #4214, #4220) and on Slack, so the evaluation artifacts will look like Jaeger PRs, not a notebook. The Summary Fields work was split from #4063 into independently mergeable PRs following ADR 0010, each leaving the UI functional; that decomposition pattern is exactly how this evaluation program must be executed, and I have already applied it in this codebase under review from the same mentors.
+The POC already exists, so weeks 1–4 are not spent rediscovering that `cartFailure` saturates accuracy. The term is the harder suite, Opik, and a default-configuration recommendation that can merge without a rewrite. I already land work under Yuri and Jonah's review in jaeger-ui ([#4054](https://github.com/jaegertracing/jaeger-ui/pull/4054), [#4149](https://github.com/jaegertracing/jaeger-ui/pull/4149), [#4214](https://github.com/jaegertracing/jaeger-ui/pull/4214), [#4220](https://github.com/jaegertracing/jaeger-ui/pull/4220)) and on Slack, so the evaluation artifacts will look like Jaeger PRs, not a notebook. The Summary Fields work was split from #4063 into independently mergeable PRs following ADR 0010, each leaving the UI functional; that decomposition pattern is exactly how this evaluation program must be executed, and I have already applied it in this codebase under review from the same mentors.
 
 ## 7. Risk and mitigation
 
-Soumya's #8440 Skills framework may not be in its final form when Term 3 begins. Mitigation: the research phase explicitly includes aligning with whatever state #8440 has reached by September, treating her output as the integration point. The harness is Skill-file-agnostic by design: it reads any `.md` file at the path the MCP server exposes.
+Soumya's [#8440](https://github.com/jaegertracing/jaeger/issues/8440) Skills framework may not be in its final form when Term 3 begins. Mitigation: the research phase explicitly includes aligning with whatever state #8440 has reached by September, treating his output as the integration point. The harness is Skill-file-agnostic by design: it reads any `.md` file at the path the MCP server exposes.
 
 ## 8. Blog post outline
 
